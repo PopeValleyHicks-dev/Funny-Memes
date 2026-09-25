@@ -11,7 +11,10 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
-USER_AGENT = "Funny-Memes-Bot/1.0"
+USER_AGENT = (
+    "script:Funny-Memes:1.0 "
+    "(by /u/Funny-Memes-Bot; repo:https://github.com/PopeValleyHicks-dev/Funny-Memes)"
+)
 DEFAULT_SUBREDDITS = [
     "memes",
     "dankmemes",
@@ -124,6 +127,9 @@ def normalize_title(title: str) -> str:
 
 
 def collect_memes(subreddits: list[str], count: int, limit_per_subreddit: int) -> list[dict[str, Any]]:
+    if count <= 0:
+        return []
+
     seen_ids: set[str] = set()
     items: list[dict[str, Any]] = []
 
@@ -166,7 +172,7 @@ def render_markdown(items: list[dict[str, Any]], generated_at: str) -> str:
         lines.append(f"- Score: {item['score']}")
         lines.append(f"- Comments: {item['comments']}")
         lines.append(f"- Post: {item['post_url']}")
-        lines.append(f"- Image: {item['image_url']}")
+        lines.append(f"- Image: ![{item['title']}]({item['image_url']})")
         lines.append("")
 
     return "\n".join(lines).strip() + "\n"

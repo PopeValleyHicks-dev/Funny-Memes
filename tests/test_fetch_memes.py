@@ -42,6 +42,34 @@ class PostToItemTests(unittest.TestCase):
         self.assertEqual(item["title"], "Preview image")
         self.assertEqual(item["image_url"], "https://example.com/image.png?width=100&height=100")
 
+    def test_rejects_posts_with_empty_preview_images(self) -> None:
+        post = {
+            "id": "abc123",
+            "title": "No image",
+            "permalink": "/r/memes/comments/abc123/example/",
+            "over_18": False,
+            "stickied": False,
+            "is_video": False,
+            "url": "https://reddit.com/gallery/abc123",
+            "preview": {"images": []},
+        }
+
+        self.assertIsNone(post_to_item(post, "memes"))
+
+    def test_rejects_posts_with_malformed_preview_images(self) -> None:
+        post = {
+            "id": "abc123",
+            "title": "Bad image",
+            "permalink": "/r/memes/comments/abc123/example/",
+            "over_18": False,
+            "stickied": False,
+            "is_video": False,
+            "url": "https://reddit.com/gallery/abc123",
+            "preview": {"images": ["invalid"]},
+        }
+
+        self.assertIsNone(post_to_item(post, "memes"))
+
 
 class RenderMarkdownTests(unittest.TestCase):
     def test_renders_all_memes(self) -> None:
@@ -62,6 +90,7 @@ class RenderMarkdownTests(unittest.TestCase):
         self.assertIn("# Daily Funny Memes", markdown)
         self.assertIn("## 1. A meme", markdown)
         self.assertIn("- Source: r/memes", markdown)
+        self.assertIn("- Image: ![A meme](https://example.com/image.jpg)", markdown)
 
 
 if __name__ == "__main__":
