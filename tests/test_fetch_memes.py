@@ -1,5 +1,6 @@
 import unittest
 from unittest.mock import patch
+from urllib.error import URLError
 
 from scripts.fetch_memes import collect_memes, post_to_item, render_markdown
 
@@ -91,7 +92,7 @@ class RenderMarkdownTests(unittest.TestCase):
         self.assertIn("# Daily Funny Memes", markdown)
         self.assertIn("## 1. A meme", markdown)
         self.assertIn("- Source: r/memes", markdown)
-        self.assertIn("- Image: ![A meme](https://example.com/image.jpg)", markdown)
+        self.assertIn("- Image: ![A meme](<https://example.com/image.jpg>)", markdown)
 
     def test_escapes_markdown_characters_in_image_alt_text(self) -> None:
         markdown = render_markdown(
@@ -109,7 +110,33 @@ class RenderMarkdownTests(unittest.TestCase):
         )
 
         self.assertIn(
-            r"- Image: ![A \[meme\] \(test\)](https://example.com/image.jpg)",
+            r"- Image: ![A \[meme\] \(test\)](<https://example.com/image.jpg>)",
+            markdown,
+        )
+
+    def test_renders_empty_item_list(self) -> None:
+        markdown = render_markdown([], "2026-09-25T00:00:00+00:00")
+
+        self.assertIn("# Daily Funny Memes", markdown)
+        self.assertIn("Generated at: 2026-09-25T00:00:00+00:00", markdown)
+
+    def test_wraps_markdown_image_url_destination(self) -> None:
+        markdown = render_markdown(
+            [
+                {
+                    "title": "A meme",
+                    "subreddit": "memes",
+                    "score": 42,
+                    "comments": 7,
+                    "post_url": "https://www.reddit.com/test",
+                    "image_url": "https://example.com/image(1).jpg?caption=fun meme",
+                }
+            ],
+            "2026-09-25T00:00:00+00:00",
+        )
+
+        self.assertIn(
+            "- Image: ![A meme](<https://example.com/image(1).jpg?caption=fun meme>)",
             markdown,
         )
 
@@ -193,6 +220,34 @@ class CollectMemesTests(unittest.TestCase):
         items = collect_memes(["memes"], count=3, limit_per_subreddit=10)
 
         self.assertEqual(len(items), 1)
+
+    @patch("scripts.fetch_memes.fetch_feed")
+    def test_continues_after_subreddit_fetch_failure(self, mock_fetch_feed) -> None:
+        mock_fetch_feed.side_effect = [
+            URLError("temporary outage"),
+            {
+                "data": {
+                    "children": [
+                        {
+                            "data": {
+                                "id": "two",
+                                "title": "Recovered meme",
+                                "permalink": "/r/funny/comments/two/recovered/",
+                                "over_18": False,
+                                "stickied": False,
+                                "is_video": False,
+                                "url": "https://example.com/two.jpg",
+                            }
+                        }
+                    ]
+                }
+            },
+        ]
+
+        items = collect_memes(["memes", "funny"], count=1, limit_per_subreddit=10)
+
+        self.assertEqual(len(items), 1)
+        self.assertEqual(items[0]["id"], "two")
 
 
 if __name__ == "__main__":

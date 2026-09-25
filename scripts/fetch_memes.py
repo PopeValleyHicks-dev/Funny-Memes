@@ -133,6 +133,10 @@ def escape_markdown_text(value: str) -> str:
     return escaped
 
 
+def escape_markdown_destination(value: str) -> str:
+    return f"<{value.replace('>', '%3E')}>"
+
+
 def collect_memes(subreddits: list[str], count: int, limit_per_subreddit: int) -> list[dict[str, Any]]:
     if count <= 0:
         return []
@@ -141,7 +145,10 @@ def collect_memes(subreddits: list[str], count: int, limit_per_subreddit: int) -
     items: list[dict[str, Any]] = []
 
     for subreddit in subreddits:
-        feed = fetch_feed(subreddit, limit_per_subreddit)
+        try:
+            feed = fetch_feed(subreddit, limit_per_subreddit)
+        except (HTTPError, URLError, socket.timeout, TimeoutError):
+            continue
         children = feed.get("data", {}).get("children", [])
         for child in children:
             post = child.get("data") if isinstance(child, dict) else None
@@ -175,7 +182,9 @@ def render_markdown(items: list[dict[str, Any]], generated_at: str) -> str:
         lines.append(f"- Comments: {item['comments']}")
         lines.append(f"- Post: {item['post_url']}")
         lines.append(
-            f"- Image: ![{escape_markdown_text(item['title'])}]({item['image_url']})"
+            "- Image: "
+            f"![{escape_markdown_text(item['title'])}]"
+            f"({escape_markdown_destination(item['image_url'])})"
         )
         lines.append("")
 
