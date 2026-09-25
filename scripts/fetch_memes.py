@@ -63,8 +63,10 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def fetch_feed(subreddit: str, limit: int) -> dict[str, Any]:
+def fetch_feed(subreddit: str, limit: int, after: str | None = None) -> dict[str, Any]:
     url = f"https://api.reddit.com/r/{subreddit}/top?t=day&limit={limit}"
+    if after:
+        url = f"{url}&after={after}"
     request = Request(
         url,
         headers={
@@ -148,28 +150,41 @@ def collect_memes(subreddits: list[str], count: int, limit_per_subreddit: int) -
     successful_fetches = 0
 
     for subreddit in subreddits:
-        try:
-            feed = fetch_feed(subreddit, limit_per_subreddit)
-        except (HTTPError, URLError, socket.timeout, TimeoutError) as error:
-            message = f"Skipping r/{subreddit}: {error}"
-            fetch_failures.append(message)
-            print(message, file=sys.stderr)
-            continue
-        successful_fetches += 1
-        children = feed.get("data", {}).get("children", [])
-        for child in children:
-            post = child.get("data") if isinstance(child, dict) else None
-            if not isinstance(post, dict):
-                continue
+        after: str | None = None
+        inspected = 0
 
-            item = post_to_item(post, subreddit)
-            if not item or item["id"] in seen_ids:
-                continue
+        while inspected < limit_per_subreddit:
+            batch_size = min(100, limit_per_subreddit - inspected)
+            try:
+                feed = fetch_feed(subreddit, batch_size, after=after)
+            except (HTTPError, URLError, socket.timeout, TimeoutError) as error:
+                message = f"Skipping r/{subreddit}: {error}"
+                fetch_failures.append(message)
+                print(message, file=sys.stderr)
+                break
 
-            seen_ids.add(item["id"])
-            items.append(item)
-            if len(items) >= count:
-                return items
+            successful_fetches += 1
+            data = feed.get("data", {})
+            children = data.get("children", [])
+            inspected += len(children)
+
+            for child in children:
+                post = child.get("data") if isinstance(child, dict) else None
+                if not isinstance(post, dict):
+                    continue
+
+                item = post_to_item(post, subreddit)
+                if not item or item["id"] in seen_ids:
+                    continue
+
+                seen_ids.add(item["id"])
+                items.append(item)
+                if len(items) >= count:
+                    return items
+
+            after = data.get("after")
+            if not after or not children:
+                break
 
     if successful_fetches == 0 and fetch_failures:
         raise RuntimeError("; ".join(fetch_failures))

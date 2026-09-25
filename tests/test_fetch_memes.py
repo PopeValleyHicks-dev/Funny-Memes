@@ -1,8 +1,11 @@
 import unittest
+from argparse import Namespace
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 from urllib.error import URLError
 
-from scripts.fetch_memes import collect_memes, post_to_item, render_markdown
+from scripts.fetch_memes import collect_memes, main, post_to_item, render_markdown
 
 
 class PostToItemTests(unittest.TestCase):
@@ -255,6 +258,41 @@ class CollectMemesTests(unittest.TestCase):
 
         with self.assertRaises(RuntimeError):
             collect_memes(["memes", "funny"], count=1, limit_per_subreddit=10)
+
+
+class MainTests(unittest.TestCase):
+    @patch("scripts.fetch_memes.collect_memes")
+    @patch("scripts.fetch_memes.parse_args")
+    def test_main_writes_json_and_markdown_outputs(
+        self, mock_parse_args, mock_collect_memes
+    ) -> None:
+        with TemporaryDirectory() as temp_dir:
+            temp_path = Path(temp_dir)
+            mock_parse_args.return_value = Namespace(
+                count=50,
+                limit_per_subreddit=100,
+                subreddits=["memes"],
+                output_json=temp_path / "daily_memes.json",
+                output_markdown=temp_path / "daily_memes.md",
+            )
+            mock_collect_memes.return_value = [
+                {
+                    "id": "one",
+                    "title": "A meme",
+                    "subreddit": "memes",
+                    "author": "tester",
+                    "score": 42,
+                    "comments": 7,
+                    "post_url": "https://www.reddit.com/test",
+                    "image_url": "https://example.com/image.jpg",
+                }
+            ]
+
+            exit_code = main()
+
+            self.assertEqual(exit_code, 0)
+            self.assertTrue((temp_path / "daily_memes.json").exists())
+            self.assertTrue((temp_path / "daily_memes.md").exists())
 
 
 if __name__ == "__main__":
