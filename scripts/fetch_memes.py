@@ -150,11 +150,6 @@ def collect_memes(subreddits: list[str], count: int, limit_per_subreddit: int) -
             if len(items) >= count:
                 return items
 
-    if len(items) < count:
-        raise RuntimeError(
-            f"Only collected {len(items)} memes from {len(subreddits)} subreddits; needed {count}."
-        )
-
     return items
 
 
@@ -181,7 +176,10 @@ def render_markdown(items: list[dict[str, Any]], generated_at: str) -> str:
 def write_outputs(output_json: Path, output_markdown: Path, payload: dict[str, Any]) -> None:
     output_json.parent.mkdir(parents=True, exist_ok=True)
     output_markdown.parent.mkdir(parents=True, exist_ok=True)
-    output_json.write_text(json.dumps(payload, indent=2, ensure_ascii=False) + "\n")
+    output_json.write_text(
+        json.dumps(payload, indent=2, ensure_ascii=False) + "\n",
+        encoding="utf-8",
+    )
     output_markdown.write_text(
         render_markdown(payload["items"], payload["generated_at"]),
         encoding="utf-8",
@@ -199,6 +197,7 @@ def main() -> int:
 
     payload = {
         "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
+        "requested_count": args.count,
         "count": len(items),
         "sources": subreddits,
         "items": items,
