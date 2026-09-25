@@ -1,0 +1,36 @@
+name: Daily Memes
+
+on:
+  schedule:
+    - cron: "0 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-memes:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Fetch daily memes
+        run: python scripts/fetch_memes.py
+
+      - name: Commit updated meme feed
+        run: |
+          if git diff --quiet -- data/daily_memes.json data/daily_memes.md; then
+            echo "No meme updates to commit."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/daily_memes.json data/daily_memes.md
+          git commit -m "Update daily memes"
+          git push

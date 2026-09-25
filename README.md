@@ -1,2 +1,26 @@
 # Funny-Memes
-Memes
+
+This repository automatically collects 50 funny meme posts every day from public Reddit meme communities and saves the results in the repository.
+
+## Outputs
+
+- `/home/runner/work/Funny-Memes/Funny-Memes/data/daily_memes.json` stores the daily feed as structured data.
+- `/home/runner/work/Funny-Memes/Funny-Memes/data/daily_memes.md` stores the same feed in a readable Markdown format.
+
+## Automation
+
+The workflow at `/home/runner/work/Funny-Memes/Funny-Memes/.github/workflows/daily-memes.yml` runs every day at 12:00 UTC and can also be triggered manually.
+
+## Local usage
+
+Run the collector locally with:
+
+```bash
+python scripts/fetch_memes.py
+```
+
+Optional flags:
+
+- `--count` to change how many memes are collected.
+- `--subreddit` to override the default subreddit list.
+- `--output-json` and `--output-markdown` to change output paths.
