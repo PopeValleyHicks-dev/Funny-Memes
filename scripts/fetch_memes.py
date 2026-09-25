@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import socket
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -108,7 +109,7 @@ def post_to_item(post: dict[str, Any], subreddit: str) -> dict[str, Any] | None:
 
     return {
         "id": post_id,
-        "title": title.strip(),
+        "title": normalize_title(title),
         "subreddit": subreddit,
         "author": post.get("author"),
         "score": post.get("score"),
@@ -116,6 +117,10 @@ def post_to_item(post: dict[str, Any], subreddit: str) -> dict[str, Any] | None:
         "post_url": f"https://www.reddit.com{permalink}",
         "image_url": image_url,
     }
+
+
+def normalize_title(title: str) -> str:
+    return " ".join(title.split())
 
 
 def collect_memes(subreddits: list[str], count: int, limit_per_subreddit: int) -> list[dict[str, Any]]:
@@ -183,7 +188,7 @@ def main() -> int:
 
     try:
         items = collect_memes(subreddits, args.count, args.limit_per_subreddit)
-    except (HTTPError, URLError, TimeoutError, RuntimeError) as error:
+    except (HTTPError, URLError, socket.timeout, TimeoutError, RuntimeError) as error:
         raise SystemExit(str(error)) from error
 
     payload = {

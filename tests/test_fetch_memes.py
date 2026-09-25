@@ -19,7 +19,7 @@ class PostToItemTests(unittest.TestCase):
     def test_uses_preview_image_when_direct_url_is_not_an_image(self) -> None:
         post = {
             "id": "abc123",
-            "title": "Preview image",
+            "title": "Preview\nimage",
             "permalink": "/r/memes/comments/abc123/example/",
             "over_18": False,
             "stickied": False,
@@ -39,6 +39,7 @@ class PostToItemTests(unittest.TestCase):
         item = post_to_item(post, "memes")
 
         self.assertIsNotNone(item)
+        self.assertEqual(item["title"], "Preview image")
         self.assertEqual(item["image_url"], "https://example.com/image.png?width=100&height=100")
 
 
