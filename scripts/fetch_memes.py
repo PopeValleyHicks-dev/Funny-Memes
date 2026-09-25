@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import socket
+import sys
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -143,12 +144,18 @@ def collect_memes(subreddits: list[str], count: int, limit_per_subreddit: int) -
 
     seen_ids: set[str] = set()
     items: list[dict[str, Any]] = []
+    fetch_failures: list[str] = []
+    successful_fetches = 0
 
     for subreddit in subreddits:
         try:
             feed = fetch_feed(subreddit, limit_per_subreddit)
-        except (HTTPError, URLError, socket.timeout, TimeoutError):
+        except (HTTPError, URLError, socket.timeout, TimeoutError) as error:
+            message = f"Skipping r/{subreddit}: {error}"
+            fetch_failures.append(message)
+            print(message, file=sys.stderr)
             continue
+        successful_fetches += 1
         children = feed.get("data", {}).get("children", [])
         for child in children:
             post = child.get("data") if isinstance(child, dict) else None
@@ -163,6 +170,9 @@ def collect_memes(subreddits: list[str], count: int, limit_per_subreddit: int) -
             items.append(item)
             if len(items) >= count:
                 return items
+
+    if successful_fetches == 0 and fetch_failures:
+        raise RuntimeError("; ".join(fetch_failures))
 
     return items
 

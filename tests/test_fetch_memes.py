@@ -249,6 +249,13 @@ class CollectMemesTests(unittest.TestCase):
         self.assertEqual(len(items), 1)
         self.assertEqual(items[0]["id"], "two")
 
+    @patch("scripts.fetch_memes.fetch_feed")
+    def test_raises_when_all_subreddit_fetches_fail(self, mock_fetch_feed) -> None:
+        mock_fetch_feed.side_effect = URLError("temporary outage")
+
+        with self.assertRaises(RuntimeError):
+            collect_memes(["memes", "funny"], count=1, limit_per_subreddit=10)
+
 
 if __name__ == "__main__":
     unittest.main()

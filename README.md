@@ -9,7 +9,7 @@ This repository automatically collects 50 funny meme posts every day from public
 
 ## Automation
 
-The workflow at `.github/workflows/daily-memes.yml` runs every day at 12:00 UTC and can also be triggered manually.
+The workflow at `.github/workflows/daily-memes.yml` is scheduled to run daily around 12:00 UTC and can also be triggered manually.
 
 ## Local usage
 
