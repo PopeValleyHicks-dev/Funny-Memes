@@ -93,6 +93,26 @@ class RenderMarkdownTests(unittest.TestCase):
         self.assertIn("- Source: r/memes", markdown)
         self.assertIn("- Image: ![A meme](https://example.com/image.jpg)", markdown)
 
+    def test_escapes_markdown_characters_in_image_alt_text(self) -> None:
+        markdown = render_markdown(
+            [
+                {
+                    "title": "A [meme] (test)",
+                    "subreddit": "memes",
+                    "score": 42,
+                    "comments": 7,
+                    "post_url": "https://www.reddit.com/test",
+                    "image_url": "https://example.com/image.jpg",
+                }
+            ],
+            "2026-09-25T00:00:00+00:00",
+        )
+
+        self.assertIn(
+            r"- Image: ![A \[meme\] \(test\)](https://example.com/image.jpg)",
+            markdown,
+        )
+
 
 class CollectMemesTests(unittest.TestCase):
     @patch("scripts.fetch_memes.fetch_feed")

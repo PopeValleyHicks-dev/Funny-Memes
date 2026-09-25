@@ -63,7 +63,7 @@ def parse_args() -> argparse.Namespace:
 
 
 def fetch_feed(subreddit: str, limit: int) -> dict[str, Any]:
-    url = f"https://www.reddit.com/r/{subreddit}/top.json?t=day&limit={limit}"
+    url = f"https://api.reddit.com/r/{subreddit}/top?t=day&limit={limit}"
     request = Request(
         url,
         headers={
@@ -126,6 +126,13 @@ def normalize_title(title: str) -> str:
     return " ".join(title.split())
 
 
+def escape_markdown_text(value: str) -> str:
+    escaped = value.replace("\\", "\\\\")
+    for character in "[]()":
+        escaped = escaped.replace(character, f"\\{character}")
+    return escaped
+
+
 def collect_memes(subreddits: list[str], count: int, limit_per_subreddit: int) -> list[dict[str, Any]]:
     if count <= 0:
         return []
@@ -167,7 +174,9 @@ def render_markdown(items: list[dict[str, Any]], generated_at: str) -> str:
         lines.append(f"- Score: {item['score']}")
         lines.append(f"- Comments: {item['comments']}")
         lines.append(f"- Post: {item['post_url']}")
-        lines.append(f"- Image: ![{item['title']}]({item['image_url']})")
+        lines.append(
+            f"- Image: ![{escape_markdown_text(item['title'])}]({item['image_url']})"
+        )
         lines.append("")
 
     return "\n".join(lines).strip() + "\n"
