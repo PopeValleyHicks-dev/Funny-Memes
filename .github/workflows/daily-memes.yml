@@ -20,6 +20,9 @@ jobs:
         with:
           python-version: "3.12"
 
+      - name: Run tests
+        run: python -m unittest discover -s tests
+
       - name: Fetch daily memes
         run: python scripts/fetch_memes.py
 

@@ -4,12 +4,12 @@ This repository automatically collects 50 funny meme posts every day from public
 
 ## Outputs
 
-- `/home/runner/work/Funny-Memes/Funny-Memes/data/daily_memes.json` stores the daily feed as structured data.
-- `/home/runner/work/Funny-Memes/Funny-Memes/data/daily_memes.md` stores the same feed in a readable Markdown format.
+- `data/daily_memes.json` stores the daily feed as structured data.
+- `data/daily_memes.md` stores the same feed in a readable Markdown format.
 
 ## Automation
 
-The workflow at `/home/runner/work/Funny-Memes/Funny-Memes/.github/workflows/daily-memes.yml` runs every day at 12:00 UTC and can also be triggered manually.
+The workflow at `.github/workflows/daily-memes.yml` runs every day at 12:00 UTC and can also be triggered manually.
 
 ## Local usage
 
